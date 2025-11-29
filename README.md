@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # studyflow
 
 A new Flutter project.
@@ -14,3 +15,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# studyflow
+>>>>>>> 4587ec02c26483498e4de1b8d9c2486d1ed31141
