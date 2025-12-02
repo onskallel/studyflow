@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../database/database_adapter.dart';
+import '../models/matiere.dart';
 
 class MatieresScreen extends StatefulWidget {
   const MatieresScreen({super.key});
@@ -8,113 +10,423 @@ class MatieresScreen extends StatefulWidget {
 }
 
 class _MatieresScreenState extends State<MatieresScreen> {
-  final List<Map<String, dynamic>> _matieres = [
-    {
-      'nom': 'Mathématiques',
-      'couleur': Colors.blue,
-      'priorite': 2,
-      'temps': '4h30',
-      'progression': 0.6,
-    },
-    {
-      'nom': 'Physique',
-      'couleur': Colors.green,
-      'priorite': 1,
-      'temps': '2h15',
-      'progression': 0.3,
-    },
-    {
-      'nom': 'Anglais',
-      'couleur': Colors.orange,
-      'priorite': 0,
-      'temps': '3h00',
-      'progression': 0.5,
-    },
-  ];
+  final StudyFlowDatabase _dbHelper = getDatabase();
+  List<Matiere> _matieres = [];
+  bool _isLoading = true;
+  
+  // Clé pour le RefreshIndicator
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _chargerMatieres();
+  }
+
+  Future<void> _chargerMatieres() async {
+    if (!mounted) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      final matieres = await _dbHelper.getMatieres();
+      if (mounted) {
+        setState(() {
+          _matieres = matieres;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Erreur chargement matières: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // Fonction pour rafraîchir manuellement
+  Future<void> _onRefresh() async {
+    await _chargerMatieres();
+  }
+
+  Color _parseColor(String hexColor) {
+    try {
+      hexColor = hexColor.replaceFirst('#', '');
+      if (hexColor.length == 6) {
+        hexColor = 'FF$hexColor';
+      }
+      return Color(int.parse(hexColor, radix: 16));
+    } catch (e) {
+      return Colors.blue;
+    }
+  }
+
+  String _getPriorityText(int priorite) {
+    switch (priorite) {
+      case 0: return 'Basse';
+      case 1: return 'Moyenne';
+      case 2: return 'Haute';
+      default: return 'Inconnue';
+    }
+  }
+
+  IconData _getPriorityIcon(int priorite) {
+    switch (priorite) {
+      case 0: return Icons.arrow_downward;
+      case 1: return Icons.remove;
+      case 2: return Icons.arrow_upward;
+      default: return Icons.help;
+    }
+  }
+
+  Color _getPriorityColor(int priorite) {
+    switch (priorite) {
+      case 0: return Colors.green;
+      case 1: return Colors.orange;
+      case 2: return Colors.red;
+      default: return Colors.grey;
+    }
+  }
+
+  // Fonction pour récupérer le temps étudié par matière
+  Future<Map<int, int>> _getTempsParMatiere() async {
+    try {
+      // Utilisez la méthode existante ou calculez manuellement
+      final tempsParMatiere = await _dbHelper.getTempsParMatiere();
+      final Map<int, int> result = {};
+      
+      // Convertir Map<String, int> en Map<int, int>
+      for (var matiere in _matieres) {
+        result[matiere.id!] = tempsParMatiere[matiere.nom] ?? 0;
+      }
+      
+      return result;
+    } catch (e) {
+      print('❌ Erreur calcul temps par matière: $e');
+      return {};
+    }
+  }
+
+  // Fonction pour récupérer le nombre de sessions par matière
+  Future<Map<int, int>> _getSessionsParMatiere() async {
+    try {
+      final sessions = await _dbHelper.getSessions();
+      final Map<int, int> result = {};
+      
+      for (var session in sessions) {
+        result[session.matiereId] = (result[session.matiereId] ?? 0) + 1;
+      }
+      
+      return result;
+    } catch (e) {
+      print('❌ Erreur comptage sessions: $e');
+      return {};
+    }
+  }
 
   void _showAddMatiereDialog(BuildContext context) {
-    TextEditingController controller = TextEditingController();
+    final TextEditingController nomController = TextEditingController();
+    String selectedColor = '#2196F3';
+    int selectedPriority = 1;
     
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('➕ Nouvelle matière'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Nom de la matière',
-              border: OutlineInputBorder(),
-              hintText: 'Ex: Chimie, Histoire...',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final nom = controller.text.trim();
-                if (nom.isNotEmpty) {
-                  _ajouterMatiere(nom);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Ajouter'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('➕ Nouvelle matière'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nomController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom de la matière',
+                        border: OutlineInputBorder(),
+                        hintText: 'Ex: Chimie, Histoire...',
+                        prefixIcon: Icon(Icons.book),
+                      ),
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Sélecteur de priorité
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Priorité :'),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildPriorityButton('Basse', 0, selectedPriority, setDialogState),
+                            _buildPriorityButton('Moyenne', 1, selectedPriority, setDialogState),
+                            _buildPriorityButton('Haute', 2, selectedPriority, setDialogState),
+                          ],
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Sélecteur de couleur
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Couleur :'),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            '#2196F3', '#4CAF50', '#FF5722',
+                            '#9C27B0', '#FF9800', '#E91E63',
+                          ].map((color) {
+                            return GestureDetector(
+                              onTap: () => setDialogState(() => selectedColor = color),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: _parseColor(color),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: selectedColor == color 
+                                      ? Colors.black 
+                                      : Colors.transparent,
+                                    width: 3,
+                                  ),
+                                ),
+                                child: selectedColor == color
+                                    ? const Center(
+                                        child: Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final nom = nomController.text.trim();
+                    if (nom.isNotEmpty) {
+                      await _ajouterMatiere(nom, selectedColor, selectedPriority);
+                      Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('❌ Veuillez entrer un nom'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Ajouter'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  void _ajouterMatiere(String nom) {
-    setState(() {
-      _matieres.add({
-        'nom': nom,
-        'couleur': Colors.blue, // Couleur par défaut
-        'priorite': 1, // Priorité moyenne par défaut
-        'temps': '0h00',
-        'progression': 0.0,
-      });
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ "$nom" ajoutée avec succès'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+  Widget _buildPriorityButton(String label, int priority, int selectedPriority, Function setDialogState) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: ElevatedButton(
+          onPressed: () => setDialogState(() {}),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: selectedPriority == priority 
+              ? _getPriorityColor(priority)
+              : Colors.grey.shade200,
+            foregroundColor: selectedPriority == priority 
+              ? Colors.white 
+              : Colors.grey.shade800,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
       ),
     );
   }
 
-  void _supprimerMatiere(int index) {
-    final nomMatiere = _matieres[index]['nom'];
-    
+  Future<void> _ajouterMatiere(String nom, String couleur, int priorite) async {
+    try {
+      final nouvelleMatiere = Matiere(
+        nom: nom,
+        couleur: couleur,
+        priorite: priorite,
+        objectifHebdo: 0,
+      );
+      
+      final id = await _dbHelper.insertMatiere(nouvelleMatiere);
+      
+      // Recharger immédiatement
+      await _chargerMatieres();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ "$nom" ajoutée avec succès (ID: $id)'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('❌ Erreur ajout matière: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Erreur: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _supprimerMatiere(int id, String nom) async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Supprimer la matière ?'),
-        content: Text('Êtes-vous sûr de vouloir supprimer "$nomMatiere" ?'),
+        content: Text('Êtes-vous sûr de vouloir supprimer "$nom" ? Cette action est irréversible.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler'),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _matieres.removeAt(index);
-              });
-              Navigator.pop(context);
+            onPressed: () async {
+              try {
+                await _dbHelper.deleteMatiere(id);
+                await _chargerMatieres();
+                Navigator.pop(context);
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🗑️ "$nom" supprimée'),
+                    backgroundColor: Colors.grey,
+                  ),
+                );
+              } catch (e) {
+                print('❌ Erreur suppression: $e');
+                Navigator.pop(context);
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Supprimer'),
           ),
         ],
       ),
+    );
+  }
+
+  void _showEditObjectifDialog(Matiere matiere) {
+    final TextEditingController controller = TextEditingController(
+      text: matiere.objectifHebdo.toString(),
+    );
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('🎯 Objectif pour ${matiere.nom}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Objectif hebdomadaire (en minutes) :'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Minutes par semaine',
+                border: OutlineInputBorder(),
+                suffixText: 'min',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              children: [
+                _buildQuickGoalButton('30min', 30, controller),
+                _buildQuickGoalButton('1h', 60, controller),
+                _buildQuickGoalButton('2h', 120, controller),
+                _buildQuickGoalButton('5h', 300, controller),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final minutes = int.tryParse(controller.text);
+              if (minutes != null && minutes >= 0) {
+                final matiereModifiee = Matiere(
+                  id: matiere.id,
+                  nom: matiere.nom,
+                  couleur: matiere.couleur,
+                  priorite: matiere.priorite,
+                  objectifHebdo: minutes,
+                );
+                
+                try {
+                  await _dbHelper.updateMatiere(matiereModifiee);
+                  await _chargerMatieres();
+                  Navigator.pop(context);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('✅ Objectif de $minutes min défini'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  print('❌ Erreur mise à jour objectif: $e');
+                }
+              }
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickGoalButton(String label, int minutes, TextEditingController controller) {
+    return ElevatedButton(
+      onPressed: () => controller.text = minutes.toString(),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue.shade100,
+        foregroundColor: Colors.blue,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      child: Text(label),
     );
   }
 
@@ -128,79 +440,122 @@ class _MatieresScreenState extends State<MatieresScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _onRefresh,
+            tooltip: 'Rafraîchir',
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAddMatiereDialog(context),
             tooltip: 'Ajouter une matière',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddMatiereDialog(context),
-        child: const Icon(Icons.add),
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final bool isDesktop = constraints.maxWidth > 600;
-          
-          return Padding(
-            padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isDesktop) ...[
-                  const Text(
-                    'Gestion des Matières',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                
-                // COMPTEUR DE MATIÈRES
-                Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
+      body: RefreshIndicator(
+        key: _refreshIndicatorKey,
+        onRefresh: _onRefresh,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final bool isDesktop = constraints.maxWidth > 600;
+                  
+                  return Padding(
+                    padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.library_books, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${_matieres.length} matière${_matieres.length > 1 ? 's' : ''}',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        if (isDesktop) ...[
+                          const Text(
+                            'Gestion des Matières',
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                        
+                        // COMPTEUR DE MATIÈRES
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.library_books, color: Colors.blue),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${_matieres.length} matière${_matieres.length > 1 ? 's' : ''}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                                const Spacer(),
+                                FutureBuilder<Map<int, int>>(
+                                  future: _getSessionsParMatiere(),
+                                  builder: (context, snapshot) {
+                                    final totalSessions = snapshot.data?.values.fold(0, (sum, count) => sum + count) ?? 0;
+                                    return Text(
+                                      '$totalSessions sessions',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // LISTE/GRILLE DES MATIÈRES
+                        Expanded(
+                          child: _matieres.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.library_books,
+                                        size: 64,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Aucune matière',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Ajoutez votre première matière',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton(
+                                        onPressed: () => _showAddMatiereDialog(context),
+                                        child: const Text('Ajouter une matière'),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : isDesktop ? _buildDesktopGrid() : _buildMobileList(),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // LISTE/GRILLE DES MATIÈRES
-                Expanded(
-                  child: _matieres.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.library_books, size: 64, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text(
-                                'Aucune matière',
-                                style: TextStyle(fontSize: 18, color: Colors.grey),
-                              ),
-                              Text(
-                                'Cliquez sur + pour ajouter une matière',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        )
-                      : isDesktop ? _buildDesktopGrid() : _buildMobileList(),
-                ),
-              ],
-            ),
-          );
-        },
+                  );
+                },
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddMatiereDialog(context),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -211,7 +566,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
       itemCount: _matieres.length,
       itemBuilder: (context, index) {
         final matiere = _matieres[index];
-        return _buildMatiereCard(matiere, index, true);
+        return _buildMatiereCard(matiere, true);
       },
     );
   }
@@ -228,76 +583,207 @@ class _MatieresScreenState extends State<MatieresScreen> {
       itemCount: _matieres.length,
       itemBuilder: (context, index) {
         final matiere = _matieres[index];
-        return _buildMatiereCard(matiere, index, false);
+        return _buildMatiereCard(matiere, false);
       },
     );
   }
 
-  Widget _buildMatiereCard(Map<String, dynamic> matiere, int index, bool isMobile) {
-    final prioriteIcons = ['📘', '📗', '🔥'];
+  Widget _buildMatiereCard(Matiere matiere, bool isMobile) {
+    final couleur = _parseColor(matiere.couleur);
     
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getMatiereStats(matiere.id!),
+      builder: (context, snapshot) {
+        final tempsMatiere = snapshot.data?['temps'] ?? 0;
+        final sessionsCount = snapshot.data?['sessions'] ?? 0;
+        final progression = matiere.objectifHebdo > 0 
+            ? (tempsMatiere / matiere.objectifHebdo).clamp(0, 1)
+            : 0;
+        
+        return Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: matiere['couleur'],
-                    shape: BoxShape.circle,
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: couleur,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            matiere.nom,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Row(
+                            children: [
+                              Icon(
+                                _getPriorityIcon(matiere.priorite),
+                                size: 14,
+                                color: _getPriorityColor(matiere.priorite),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getPriorityText(matiere.priorite),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.flag, size: 18),
+                      onPressed: () => _showEditObjectifDialog(matiere),
+                      tooltip: 'Définir objectif',
+                      color: Colors.blue,
+                    ),
+                    if (isMobile)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                        onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
+                        tooltip: 'Supprimer',
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Objectif hebdomadaire
+                InkWell(
+                  onTap: () => _showEditObjectifDialog(matiere),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.flag, size: 16, color: Colors.blue),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Objectif: ${matiere.objectifHebdo} min/semaine',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontWeight: matiere.objectifHebdo > 0 
+                                ? FontWeight.bold 
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    matiere['nom'],
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                
+                const SizedBox(height: 12),
+                
+                // Statistiques
+                Row(
+                  children: [
+                    const Icon(Icons.timer, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$tempsMatiere min étudiés',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.list, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$sessionsCount sessions',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                    ),
+                  ],
                 ),
-                Text(prioriteIcons[matiere['priorite']]),
-                if (isMobile) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                    onPressed: () => _supprimerMatiere(index),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text('⏱️ ${matiere['temps']} cette semaine'),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: matiere['progression'],
-              backgroundColor: Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation<Color>(matiere['couleur']),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  '${(matiere['progression'] * 100).toInt()}%',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                
+                const SizedBox(height: 8),
+                
+                // Progression
+                LinearProgressIndicator(
+                  value: progression,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(couleur),
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const Spacer(),
+                
+                const SizedBox(height: 4),
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${(progression * 100).toInt()}% complété',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '$tempsMatiere/${matiere.objectifHebdo} min',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+                
                 if (!isMobile) ...[
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red, size: 18),
-                    onPressed: () => _supprimerMatiere(index),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+                      onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
+                      tooltip: 'Supprimer',
+                    ),
                   ),
                 ],
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  Future<Map<String, dynamic>> _getMatiereStats(int matiereId) async {
+    try {
+      final tempsParMatiere = await _getTempsParMatiere();
+      final sessionsParMatiere = await _getSessionsParMatiere();
+      
+      return {
+        'temps': tempsParMatiere[matiereId] ?? 0,
+        'sessions': sessionsParMatiere[matiereId] ?? 0,
+      };
+    } catch (e) {
+      print('❌ Erreur stats matière: $e');
+      return {'temps': 0, 'sessions': 0};
+    }
   }
 }

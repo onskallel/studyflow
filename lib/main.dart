@@ -17,7 +17,6 @@ class StudyFlowApp extends StatelessWidget {
     return MaterialApp(
       title: 'StudyFlow',
       theme: ThemeData(
-        
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
@@ -53,6 +52,18 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
           return Scaffold(
             body: _screens[_currentIndex],
             bottomNavigationBar: _buildBottomNavBar(),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TimerScreen()),
+                );
+              },
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.timer),
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
           );
         } 
         // 🖥️ DESKTOP - Écran >= 600px
@@ -68,6 +79,17 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
                   child: _screens[_currentIndex],
                 ),
               ],
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TimerScreen()),
+                );
+              },
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.timer),
             ),
           );
         }
