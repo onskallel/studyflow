@@ -1,13 +1,5 @@
-import 'package:hive/hive.dart';
-
-part 'objectif.g.dart'; // Cette ligne est TRÈS IMPORTANTE
-
-@HiveType(typeId: 2)
 class ObjectifQuotidien {
-  @HiveField(0)
   final int? id;
-
-  @HiveField(1)
   final int objectifMinutes;
 
   ObjectifQuotidien({

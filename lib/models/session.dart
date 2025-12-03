@@ -1,30 +1,16 @@
-import 'package:hive/hive.dart';
-
-part 'session.g.dart'; // Cette ligne est TRÈS IMPORTANTE
-
-@HiveType(typeId: 1)
 class SessionEtude {
-  @HiveField(0)
   final int? id;
-
-  @HiveField(1)
   final int matiereId;
-
-  @HiveField(2)
   final int duree;
-
-  @HiveField(3)
   final DateTime date;
-
-  @HiveField(4)
-  final String? note;
+  final String note;
 
   SessionEtude({
     this.id,
     required this.matiereId,
     required this.duree,
     required this.date,
-    this.note,
+    required this.note,
   }) {
     _validerDonnees();
   }

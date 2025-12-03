@@ -1,22 +1,8 @@
-import 'package:hive/hive.dart';
-
-part 'matiere.g.dart'; // Cette ligne est TRÈS IMPORTANTE
-
-@HiveType(typeId: 0)
 class Matiere {
-  @HiveField(0)
   final int? id;
-
-  @HiveField(1)
   final String nom;
-
-  @HiveField(2)
   final String couleur;
-
-  @HiveField(3)
   final int priorite;
-
-  @HiveField(4)
   final int objectifHebdo;
 
   Matiere({
