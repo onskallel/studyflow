@@ -1,8 +1,22 @@
+import 'package:hive/hive.dart';
+
+part 'matiere.g.dart'; // Cette ligne est TRÈS IMPORTANTE
+
+@HiveType(typeId: 0)
 class Matiere {
-  int? id;
+  @HiveField(0)
+  final int? id;
+
+  @HiveField(1)
   final String nom;
+
+  @HiveField(2)
   final String couleur;
+
+  @HiveField(3)
   final int priorite;
+
+  @HiveField(4)
   final int objectifHebdo;
 
   Matiere({
@@ -48,6 +62,25 @@ class Matiere {
       couleur: map['couleur'],
       priorite: map['priorite'],
       objectifHebdo: map['objectifHebdo'] ?? 0,
+    );
+  }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nom': nom,
+      'couleur': couleur,
+      'priorite': priorite,
+      'objectifHebdo': objectifHebdo,
+    };
+  }
+
+  factory Matiere.fromJson(Map<String, dynamic> json) {
+    return Matiere(
+      id: json['id'],
+      nom: json['nom'],
+      couleur: json['couleur'],
+      priorite: json['priorite'],
+      objectifHebdo: json['objectifHebdo'],
     );
   }
 

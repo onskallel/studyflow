@@ -1,4 +1,5 @@
-import 'mock_database.dart';
+import 'supabase_database.dart';
+
 import '../models/matiere.dart';
 import '../models/session.dart';
 import '../models/objectif.dart';
@@ -33,8 +34,8 @@ abstract class StudyFlowDatabase {
 
 // Factory qui retourne TOUJOURS le mock pour le moment
 StudyFlowDatabase getDatabase() {
-  print('🔄 Utilisation de MockDatabase (pour développement)');
-  return MockDatabase();
+  print('☁️ Utilisation de SupabaseDatabase (Cloud)');
+  return SupabaseDatabase();
 }
 
 // Tu peux supprimer complètement _SqliteAdapter pour l'instant

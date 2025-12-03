@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/matieres_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/timer_screen.dart';
+import 'services/database_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialiser Supabase
+  await Supabase.initialize(
+    url:
+        'https://eigfbgmjqlhswhczjhwh.supabase.co', // Ex: 'https://xyz.supabase.co'
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpZ2ZiZ21qcWxoc3doY3pqaHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3NzgzNjMsImV4cCI6MjA4MDM1NDM2M30.FbfodPdtVta0yVM548gTOkWPbPGRT38XB0vhOrUpi3A', // Ex: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  );
+
+  print('🚀 StudyFlow avec Supabase');
+
   runApp(const StudyFlowApp());
 }
 
@@ -14,14 +29,19 @@ class StudyFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'StudyFlow',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => DatabaseService()),
+      ],
+      child: MaterialApp(
+        title: 'StudyFlow',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+        ),
+        home: const ResponsiveLayout(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const ResponsiveLayout(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -63,9 +83,10 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
               foregroundColor: Colors.white,
               child: const Icon(Icons.timer),
             ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
           );
-        } 
+        }
         // 🖥️ DESKTOP - Écran >= 600px
         else {
           return Scaffold(
@@ -73,7 +94,7 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
               children: [
                 // BARRE LATÉRALE POUR PC
                 _buildNavigationRail(),
-                
+
                 // CONTENU PRINCIPAL
                 Expanded(
                   child: _screens[_currentIndex],
@@ -105,9 +126,11 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
       type: BottomNavigationBarType.fixed,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-        BottomNavigationBarItem(icon: Icon(Icons.library_books), label: 'Matières'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.library_books), label: 'Matières'),
         BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Paramètres'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.settings), label: 'Paramètres'),
       ],
     );
   }

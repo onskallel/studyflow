@@ -1,8 +1,22 @@
+import 'package:hive/hive.dart';
+
+part 'session.g.dart'; // Cette ligne est TRÈS IMPORTANTE
+
+@HiveType(typeId: 1)
 class SessionEtude {
-  int? id;
+  @HiveField(0)
+  final int? id;
+
+  @HiveField(1)
   final int matiereId;
+
+  @HiveField(2)
   final int duree;
+
+  @HiveField(3)
   final DateTime date;
+
+  @HiveField(4)
   final String? note;
 
   SessionEtude({
@@ -60,6 +74,26 @@ class SessionEtude {
         return '${heures}h${minutes}min';
       }
     }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'matiereId': matiereId,
+      'duree': duree,
+      'date': date.toIso8601String(),
+      'note': note,
+    };
+  }
+
+  factory SessionEtude.fromJson(Map<String, dynamic> json) {
+    return SessionEtude(
+      id: json['id'],
+      matiereId: json['matiereId'],
+      duree: json['duree'],
+      date: DateTime.parse(json['date']),
+      note: json['note'],
+    );
   }
 
   @override
