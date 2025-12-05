@@ -125,24 +125,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               builder: (context, constraints) {
                 final bool isDesktop = constraints.maxWidth > 600;
                 
-                return Padding(
-                  padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isDesktop ? 'Paramètres de l\'Application' : 'Paramètres',
-                        style: TextStyle(
-                          fontSize: isDesktop ? 28.0 : 24.0,
-                          fontWeight: FontWeight.bold,
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isDesktop ? 'Paramètres de l\'Application' : 'Paramètres',
+                          style: TextStyle(
+                            fontSize: isDesktop ? 28.0 : 24.0,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      Expanded(
-                        child: isDesktop ? _buildDesktopSettings() : _buildMobileSettings(),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        
+                        isDesktop ? _buildDesktopSettings() : _buildMobileSettings(),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -151,36 +151,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildMobileSettings() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildSettingSection('Objectifs', Icons.flag, [
-            _buildSettingItem('Objectif quotidien', '', Icons.flag, 'objectif'),
-            _buildSettingItem('Durée Pomodoro', '25 min', Icons.timer, 'normal'),
-          ]),
-          const SizedBox(height: 20),
-          _buildSettingSection('Apparence', Icons.palette, [
-            _buildSettingItem('Mode sombre', _modeSombre ? 'Activé' : 'Désactivé', Icons.dark_mode, 'switch'),
-            _buildSettingItem('Couleur principale', 'Bleu', Icons.palette, 'normal'),
-          ]),
-          const SizedBox(height: 20),
-          _buildSettingSection('Notifications', Icons.notifications, [
-            _buildSettingItem('Rappels d\'étude', _notifications ? 'Activées' : 'Désactivées', Icons.notifications, 'switch'),
-            _buildSettingItem('Heure des rappels', '18:00', Icons.access_time, 'normal'),
-          ]),
-          const SizedBox(height: 20),
-          _buildSettingSection('Données', Icons.backup, [
-            _buildSettingItem('Exporter données', 'CSV', Icons.backup, 'normal'),
-            _buildSettingItem('Réinitialiser données', '', Icons.restore, 'danger'),
-          ]),
-          const SizedBox(height: 20),
-          _buildSettingSection('À propos', Icons.info, [
-            _buildSettingItem('Version', '1.0.0', Icons.info, 'normal'),
-            _buildSettingItem('Contact support', '', Icons.email, 'normal'),
-            _buildSettingItem('Évaluer l\'app', '', Icons.star, 'normal'),
-          ]),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildSettingSection('Objectifs', Icons.flag, [
+          _buildSettingItem('Objectif quotidien', '', Icons.flag, 'objectif'),
+          _buildSettingItem('Durée Pomodoro', '25 min', Icons.timer, 'normal'),
+        ]),
+        const SizedBox(height: 20),
+        _buildSettingSection('Apparence', Icons.palette, [
+          _buildSettingItem('Mode sombre', _modeSombre ? 'Activé' : 'Désactivé', Icons.dark_mode, 'switch'),
+          _buildSettingItem('Couleur principale', 'Bleu', Icons.palette, 'normal'),
+        ]),
+        const SizedBox(height: 20),
+        _buildSettingSection('Notifications', Icons.notifications, [
+          _buildSettingItem('Rappels d\'étude', _notifications ? 'Activées' : 'Désactivées', Icons.notifications, 'switch'),
+          _buildSettingItem('Heure des rappels', '18:00', Icons.access_time, 'normal'),
+        ]),
+        const SizedBox(height: 20),
+        _buildSettingSection('Données', Icons.backup, [
+          _buildSettingItem('Exporter données', 'CSV', Icons.backup, 'normal'),
+          _buildSettingItem('Réinitialiser données', '', Icons.restore, 'danger'),
+        ]),
+        const SizedBox(height: 20),
+        _buildSettingSection('À propos', Icons.info, [
+          _buildSettingItem('Version', '1.0.0', Icons.info, 'normal'),
+          _buildSettingItem('Contact support', '', Icons.email, 'normal'),
+          _buildSettingItem('Évaluer l\'app', '', Icons.star, 'normal'),
+        ]),
+      ],
     );
   }
 
@@ -196,6 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListView(
+              shrinkWrap: true,
               children: [
                 _buildSettingsMenuItem('Objectifs', Icons.flag, true),
                 _buildSettingsMenuItem('Apparence', Icons.palette, false),
@@ -208,34 +208,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(width: 20),
         Expanded(
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+          child: Container(
+            constraints: const BoxConstraints(
+              minHeight: 500,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.flag, color: Colors.blue),
-                      SizedBox(width: 8),
-                      Text(
-                        'Objectifs',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Définissez vos objectifs d\'étude personnalisés pour rester motivé et suivre votre progression.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildDesktopGoalSettings(),
-                ],
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.flag, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text(
+                          'Objectifs',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Définissez vos objectifs d\'étude personnalisés pour rester motivé et suivre votre progression.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 30),
+                    _buildDesktopGoalSettings(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -245,29 +251,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingSection(String titre, IconData icon, List<Widget> enfants) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+    return Container(
+      constraints: const BoxConstraints(
+        minHeight: 100,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  titre,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ...enfants,
-          ],
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text(
+                    titre,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...enfants,
+            ],
+          ),
         ),
       ),
     );
@@ -282,7 +294,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: ListTile(
         leading: Icon(icone, color: Colors.blue),
-        title: Text(titre),
+        title: Text(
+          titre,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
         trailing: type == 'objectif'
             ? SizedBox(
                 width: 140,
@@ -333,6 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : Text(
                         valeur,
                         style: const TextStyle(color: Colors.grey),
+                        overflow: TextOverflow.ellipsis,
                       ),
         onTap: type == 'normal' ? () => print('$titre tapped') : null,
       ),
@@ -342,15 +359,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildDesktopGoalSettings() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        const Text(
           'Objectif quotidien actuel:',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           '${(_objectifMinutes / 60).toStringAsFixed(0)} heures (${_objectifMinutes} minutes)',
           style: const TextStyle(fontSize: 18, color: Colors.blue, fontWeight: FontWeight.bold),
+          overflow: TextOverflow.ellipsis,
         ),
         
         const SizedBox(height: 30),
@@ -434,6 +453,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '💡 Conseil',
@@ -443,6 +463,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   'Commencez avec un objectif réaliste (1-2h par jour) et augmentez progressivement.',
                   style: TextStyle(color: Colors.grey),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -459,7 +481,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: _objectifMinutes == minutes ? Colors.blue : Colors.grey.shade200,
         foregroundColor: _objectifMinutes == minutes ? Colors.white : Colors.black,
       ),
-      child: Text(label),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -482,6 +508,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             color: isActive ? Colors.blue : Colors.grey.shade700,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
         onTap: () => print('$titre menu tapped'),
       ),

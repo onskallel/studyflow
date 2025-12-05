@@ -55,6 +55,40 @@ class _StatsScreenState extends State<StatsScreen> {
     }
   }
 
+  // FONCTIONS DE FORMATAGE
+  String _formatMinutes(int minutes) {
+    if (minutes < 60) {
+      return '$minutes min';
+    } else {
+      final heures = minutes ~/ 60;
+      final mins = minutes % 60;
+      if (mins == 0) {
+        return '$heures h';
+      } else {
+        return '$heures h $mins min';
+      }
+    }
+  }
+
+  String _formatHeures(double heures) {
+    if (heures < 1) {
+      final minutes = (heures * 60).round();
+      return '$minutes min';
+    } else if (heures == heures.toInt()) {
+      return '${heures.toInt()} h';
+    } else {
+      final heuresEntieres = heures.floor();
+      final minutes = ((heures - heuresEntieres) * 60).round();
+      if (minutes == 0) {
+        return '$heuresEntieres h';
+      } else if (heuresEntieres == 0) {
+        return '$minutes min';
+      } else {
+        return '$heuresEntieres h $minutes min';
+      }
+    }
+  }
+
   // Filtrer les sessions selon la période sélectionnée
   List<SessionEtude> get _sessionsFiltrees {
     final maintenant = DateTime.now();
@@ -125,12 +159,6 @@ class _StatsScreenState extends State<StatsScreen> {
     );
     
     return entree.key;
-  }
-
-  double get _tempsJourPlusProductif {
-    final data = _tempsParJourSemaine;
-    if (data.isEmpty) return 0;
-    return data.reduce((a, b) => a > b ? a : b);
   }
 
   @override
@@ -310,9 +338,9 @@ class _StatsScreenState extends State<StatsScreen> {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               children: [
-                _buildStatItem('⏱️', '${_tempsTotal.toStringAsFixed(1)}h', 'Temps total'),
+                _buildStatItem('⏱️', _formatHeures(_tempsTotal), 'Temps total'),
                 _buildStatItem('📚', '$_nombreSessions', 'Sessions'),
-                _buildStatItem('⚡', '${_moyenneParSession.toStringAsFixed(1)}h', 'Moyenne/session'),
+                _buildStatItem('⚡', _formatHeures(_moyenneParSession), 'Moyenne/session'),
                 _buildStatItem('🏆', _matierePreferee, 'Matière préférée'),
               ],
             ),
@@ -341,7 +369,7 @@ class _StatsScreenState extends State<StatsScreen> {
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
@@ -453,7 +481,7 @@ class _StatsScreenState extends State<StatsScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '${entry.value.toStringAsFixed(1)}h',
+                          _formatHeures(entry.value),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
@@ -510,14 +538,14 @@ class _StatsScreenState extends State<StatsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: data.asMap().entries.map((entry) {
-                    final maxValue = _tempsJourPlusProductif;
+                    final maxValue = _tempsParJourSemaine.reduce((a, b) => a > b ? a : b);
                     final hauteur = maxValue > 0 ? (entry.value / maxValue * 100) : 0;
                     
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          '${entry.value.toStringAsFixed(1)}h',
+                          _formatHeures(entry.value),
                           style: const TextStyle(fontSize: 10),
                         ),
                         const SizedBox(height: 4),
@@ -583,7 +611,7 @@ class _StatsScreenState extends State<StatsScreen> {
             const SizedBox(height: 16),
             _buildProductivityItem('📊 Jour le plus productif', jourProductif),
             const Divider(height: 20),
-            _buildProductivityItem('⭐ Meilleure session', '${meilleureSession}h'),
+            _buildProductivityItem('⭐ Meilleure session', _formatMinutes(meilleureSession)),
             const Divider(height: 20),
             _buildProductivityItem('📈 Tendance', _getTrend()),
             const Divider(height: 20),
@@ -630,7 +658,7 @@ class _StatsScreenState extends State<StatsScreen> {
   String _getMostProductiveDay() {
     if (_sessionsFiltrees.isEmpty) return '--';
     
-    final jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    final jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeu', 'Vendredi', 'Samedi', 'Dimanche'];
     final data = _tempsParJourSemaine;
     
     if (data.isEmpty) return '--';
@@ -639,17 +667,16 @@ class _StatsScreenState extends State<StatsScreen> {
     return maxIndex >= 0 ? jours[maxIndex] : '--';
   }
 
-  double _getBestSession() {
+  int _getBestSession() {
     if (_sessionsFiltrees.isEmpty) return 0;
     
-    final maxDuree = _sessionsFiltrees.map((s) => s.duree / 60).reduce((a, b) => a > b ? a : b);
-    return double.parse(maxDuree.toStringAsFixed(1));
+    final maxDuree = _sessionsFiltrees.map((s) => s.duree).reduce((a, b) => a > b ? a : b);
+    return maxDuree;
   }
 
   String _getTrend() {
     if (_sessionsFiltrees.length < 2) return 'Stable';
     
-    // Simple tendance basée sur la dernière semaine
     final maintenant = DateTime.now();
     final derniereSemaine = maintenant.subtract(const Duration(days: 7));
     final sessionsDerniereSemaine = _sessions.where((s) => s.date.isAfter(derniereSemaine)).toList();

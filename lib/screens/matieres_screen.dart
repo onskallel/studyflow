@@ -161,9 +161,42 @@ class _MatieresScreenState extends State<MatieresScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildPriorityButton('Basse', 0, selectedPriority, setDialogState),
-                            _buildPriorityButton('Moyenne', 1, selectedPriority, setDialogState),
-                            _buildPriorityButton('Haute', 2, selectedPriority, setDialogState),
+                            _buildPriorityButton(
+                              context: context,
+                              label: 'Basse', 
+                              priority: 0, 
+                              selectedPriority: selectedPriority, 
+                              setDialogState: setDialogState,
+                              onSelected: () {
+                                setDialogState(() {
+                                  selectedPriority = 0;
+                                });
+                              },
+                            ),
+                            _buildPriorityButton(
+                              context: context,
+                              label: 'Moyenne', 
+                              priority: 1, 
+                              selectedPriority: selectedPriority, 
+                              setDialogState: setDialogState,
+                              onSelected: () {
+                                setDialogState(() {
+                                  selectedPriority = 1;
+                                });
+                              },
+                            ),
+                            _buildPriorityButton(
+                              context: context,
+                              label: 'Haute', 
+                              priority: 2, 
+                              selectedPriority: selectedPriority, 
+                              setDialogState: setDialogState,
+                              onSelected: () {
+                                setDialogState(() {
+                                  selectedPriority = 2;
+                                });
+                              },
+                            ),
                           ],
                         ),
                       ],
@@ -247,12 +280,19 @@ class _MatieresScreenState extends State<MatieresScreen> {
     );
   }
 
-  Widget _buildPriorityButton(String label, int priority, int selectedPriority, Function setDialogState) {
+  Widget _buildPriorityButton({
+    required BuildContext context,
+    required String label,
+    required int priority,
+    required int selectedPriority,
+    required Function setDialogState,
+    required VoidCallback onSelected,
+  }) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: ElevatedButton(
-          onPressed: () => setDialogState(() {}),
+          onPressed: onSelected,
           style: ElevatedButton.styleFrom(
             backgroundColor: selectedPriority == priority 
               ? _getPriorityColor(priority)
@@ -288,21 +328,25 @@ class _MatieresScreenState extends State<MatieresScreen> {
       // Recharger immédiatement
       await _chargerMatieres();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✅ "$nom" ajoutée avec succès (ID: $id)'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ "$nom" ajoutée avec succès'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
       print('❌ Erreur ajout matière: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Erreur: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -456,101 +500,105 @@ class _MatieresScreenState extends State<MatieresScreen> {
         onRefresh: _onRefresh,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : LayoutBuilder(
-                builder: (context, constraints) {
-                  final bool isDesktop = constraints.maxWidth > 600;
-                  
-                  return Padding(
-                    padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isDesktop) ...[
-                          const Text(
-                            'Gestion des Matières',
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                        
-                        // COMPTEUR DE MATIÈRES
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.library_books, color: Colors.blue),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${_matieres.length} matière${_matieres.length > 1 ? 's' : ''}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                const Spacer(),
-                                FutureBuilder<Map<int, int>>(
-                                  future: _getSessionsParMatiere(),
-                                  builder: (context, snapshot) {
-                                    final totalSessions = snapshot.data?.values.fold(0, (sum, count) => sum + count) ?? 0;
-                                    return Text(
-                                      '$totalSessions sessions',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bool isDesktop = constraints.maxWidth > 600;
+                    
+                    return Padding(
+                      padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isDesktop) ...[
+                            const Text(
+                              'Gestion des Matières',
+                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                             ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // LISTE/GRILLE DES MATIÈRES
-                        Expanded(
-                          child: _matieres.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.library_books,
-                                        size: 64,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'Aucune matière',
+                            const SizedBox(height: 20),
+                          ],
+                          
+                          // COMPTEUR DE MATIÈRES
+                          Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.library_books, color: Colors.blue),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_matieres.length} matière${_matieres.length > 1 ? 's' : ''}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                  const Spacer(),
+                                  FutureBuilder<Map<int, int>>(
+                                    future: _getSessionsParMatiere(),
+                                    builder: (context, snapshot) {
+                                      final totalSessions = snapshot.data?.values.fold(0, (sum, count) => sum + count) ?? 0;
+                                      return Text(
+                                        '$totalSessions sessions',
                                         style: TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 14,
                                           color: Colors.grey.shade600,
                                         ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Ajoutez votre première matière',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // LISTE/GRILLE DES MATIÈRES
+                          _matieres.isEmpty
+                              ? Container(
+                                  height: MediaQuery.of(context).size.height * 0.6,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.library_books,
+                                          size: 64,
+                                          color: Colors.grey.shade400,
                                         ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton(
-                                        onPressed: () => _showAddMatiereDialog(context),
-                                        child: const Text('Ajouter une matière'),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Aucune matière',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Ajoutez votre première matière',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        ElevatedButton(
+                                          onPressed: () => _showAddMatiereDialog(context),
+                                          child: const Text('Ajouter une matière'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 )
                               : isDesktop ? _buildDesktopGrid() : _buildMobileList(),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -562,29 +610,27 @@ class _MatieresScreenState extends State<MatieresScreen> {
 
   // 📱 LISTE VERTICALE POUR MOBILE
   Widget _buildMobileList() {
-    return ListView.builder(
-      itemCount: _matieres.length,
-      itemBuilder: (context, index) {
-        final matiere = _matieres[index];
-        return _buildMatiereCard(matiere, true);
-      },
+    return Column(
+      children: _matieres.map((matiere) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: _buildMatiereCard(matiere, true),
+        );
+      }).toList(),
     );
   }
 
   // 🖥️ GRID 2 COLONNES POUR DESKTOP
   Widget _buildDesktopGrid() {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.6,
-      ),
-      itemCount: _matieres.length,
-      itemBuilder: (context, index) {
-        final matiere = _matieres[index];
-        return _buildMatiereCard(matiere, false);
-      },
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: _matieres.map((matiere) {
+        return SizedBox(
+          width: (MediaQuery.of(context).size.width - 64) / 2,
+          child: _buildMatiereCard(matiere, false),
+        );
+      }).toList(),
     );
   }
 
@@ -600,171 +646,187 @@ class _MatieresScreenState extends State<MatieresScreen> {
             ? (tempsMatiere / matiere.objectifHebdo).clamp(0, 1)
             : 0;
         
-        return Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: isMobile ? 280 : 260,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: couleur,
-                        shape: BoxShape.circle,
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: couleur,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            matiere.nom,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              matiere.nom,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Row(
-                            children: [
-                              Icon(
-                                _getPriorityIcon(matiere.priorite),
-                                size: 14,
-                                color: _getPriorityColor(matiere.priorite),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _getPriorityText(matiere.priorite),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
+                            Row(
+                              children: [
+                                Icon(
+                                  _getPriorityIcon(matiere.priorite),
+                                  size: 14,
+                                  color: _getPriorityColor(matiere.priorite),
                                 ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _getPriorityText(matiere.priorite),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.flag, size: 18),
+                        onPressed: () => _showEditObjectifDialog(matiere),
+                        tooltip: 'Définir objectif',
+                        color: Colors.blue,
+                      ),
+                      if (isMobile)
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
+                          tooltip: 'Supprimer',
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Objectif hebdomadaire
+                  InkWell(
+                    onTap: () => _showEditObjectifDialog(matiere),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.flag, size: 16, color: Colors.blue),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Objectif: ${matiere.objectifHebdo} min/semaine',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                                fontWeight: matiere.objectifHebdo > 0 
+                                    ? FontWeight.bold 
+                                    : FontWeight.normal,
                               ),
-                            ],
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.flag, size: 18),
-                      onPressed: () => _showEditObjectifDialog(matiere),
-                      tooltip: 'Définir objectif',
-                      color: Colors.blue,
-                    ),
-                    if (isMobile)
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Statistiques
+                  Row(
+                    children: [
+                      const Icon(Icons.timer, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '$tempsMatiere min étudiés',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.list, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '$sessionsCount sessions',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Progression
+                  LinearProgressIndicator(
+                    value: progression,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(couleur),
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  
+                  const SizedBox(height: 4),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${(progression * 100).toInt()}% complété',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '$tempsMatiere/${matiere.objectifHebdo} min',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  if (!isMobile) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red, size: 18),
                         onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
                         tooltip: 'Supprimer',
                       ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                // Objectif hebdomadaire
-                InkWell(
-                  onTap: () => _showEditObjectifDialog(matiere),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.flag, size: 16, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Objectif: ${matiere.objectifHebdo} min/semaine',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
-                            fontWeight: matiere.objectifHebdo > 0 
-                                ? FontWeight.bold 
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Statistiques
-                Row(
-                  children: [
-                    const Icon(Icons.timer, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$tempsMatiere min étudiés',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.list, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$sessionsCount sessions',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                     ),
                   ],
-                ),
-                
-                const SizedBox(height: 8),
-                
-                // Progression
-                LinearProgressIndicator(
-                  value: progression,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(couleur),
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                
-                const SizedBox(height: 4),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${(progression * 100).toInt()}% complété',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '$tempsMatiere/${matiere.objectifHebdo} min',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                if (!isMobile) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red, size: 18),
-                      onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
-                      tooltip: 'Supprimer',
-                    ),
-                  ),
                 ],
-              ],
+              ),
             ),
           ),
         );
