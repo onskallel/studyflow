@@ -3,6 +3,7 @@ import 'supabase_database.dart';
 import '../models/matiere.dart';
 import '../models/session.dart';
 import '../models/objectif.dart';
+import '../models/settings.dart';
 
 abstract class StudyFlowDatabase {
   // Matières
@@ -27,6 +28,14 @@ abstract class StudyFlowDatabase {
   Future<int> getTempsEtudieAujourdhui();
   Future<int> getTotalTempsEtudie();
   Future<Map<String, int>> getTempsParMatiere();
+  Future<void> insertSettings(AppSettings settings);
+  Future<void> updateSettings(AppSettings settings);
+  Future<AppSettings?> getSettings();
+  Future<void> deleteSettings();
+
+  // ========== EXPORT/IMPORT ==========
+  Future<String> exportDataAsCSV();
+  Future<void> resetAllData();
 
   // Fermer la base (pour interface commune)
   Future<void> close();
