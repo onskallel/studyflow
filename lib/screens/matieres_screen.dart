@@ -91,11 +91,9 @@ class _MatieresScreenState extends State<MatieresScreen> {
   // Fonction pour récupérer le temps étudié par matière
   Future<Map<int, int>> _getTempsParMatiere() async {
     try {
-      // Utilisez la méthode existante ou calculez manuellement
       final tempsParMatiere = await _dbHelper.getTempsParMatiere();
       final Map<int, int> result = {};
       
-      // Convertir Map<String, int> en Map<int, int>
       for (var matiere in _matieres) {
         result[matiere.id!] = tempsParMatiere[matiere.nom] ?? 0;
       }
@@ -150,14 +148,14 @@ class _MatieresScreenState extends State<MatieresScreen> {
                       ),
                       autofocus: true,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 16.0),
                     
                     // Sélecteur de priorité
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Priorité :'),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 8.0),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
@@ -202,17 +200,17 @@ class _MatieresScreenState extends State<MatieresScreen> {
                       ],
                     ),
                     
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 16.0),
                     
                     // Sélecteur de couleur
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Couleur :'),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 8.0),
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: 8.0,
+                          runSpacing: 8.0,
                           children: [
                             '#2196F3', '#4CAF50', '#FF5722',
                             '#9C27B0', '#FF9800', '#E91E63',
@@ -220,8 +218,8 @@ class _MatieresScreenState extends State<MatieresScreen> {
                             return GestureDetector(
                               onTap: () => setDialogState(() => selectedColor = color),
                               child: Container(
-                                width: 36,
-                                height: 36,
+                                width: 36.0,
+                                height: 36.0,
                                 decoration: BoxDecoration(
                                   color: _parseColor(color),
                                   shape: BoxShape.circle,
@@ -229,7 +227,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                                     color: selectedColor == color 
                                       ? Colors.black 
                                       : Colors.transparent,
-                                    width: 3,
+                                    width: 3.0,
                                   ),
                                 ),
                                 child: selectedColor == color
@@ -237,7 +235,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                                         child: Icon(
                                           Icons.check,
                                           color: Colors.white,
-                                          size: 18,
+                                          size: 18.0,
                                         ),
                                       )
                                     : null,
@@ -290,7 +288,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
   }) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: ElevatedButton(
           onPressed: onSelected,
           style: ElevatedButton.styleFrom(
@@ -300,14 +298,14 @@ class _MatieresScreenState extends State<MatieresScreen> {
             foregroundColor: selectedPriority == priority 
               ? Colors.white 
               : Colors.grey.shade800,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8.0),
             ),
           ),
           child: Text(
             label,
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(fontSize: 12.0),
           ),
         ),
       ),
@@ -394,70 +392,122 @@ class _MatieresScreenState extends State<MatieresScreen> {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('🎯 Objectif pour ${matiere.nom}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Objectif hebdomadaire (en minutes) :'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Minutes par semaine',
-                border: OutlineInputBorder(),
-                suffixText: 'min',
-              ),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildQuickGoalButton('30min', 30, controller),
-                _buildQuickGoalButton('1h', 60, controller),
-                _buildQuickGoalButton('2h', 120, controller),
-                _buildQuickGoalButton('5h', 300, controller),
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '🎯 Objectif pour ${matiere.nom}',
+                        style: const TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16.0),
+                      const Text(
+                        'Objectif hebdomadaire (en minutes) :',
+                        style: TextStyle(fontSize: 14.0),
+                      ),
+                      const SizedBox(height: 16.0),
+                      TextField(
+                        controller: controller,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Minutes par semaine',
+                          border: OutlineInputBorder(),
+                          suffixText: 'min',
+                          contentPadding: EdgeInsets.all(12.0),
+                        ),
+                      ),
+                      const SizedBox(height: 16.0),
+                      const Text(
+                        'Options rapides :',
+                        style: TextStyle(fontSize: 14.0),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          _buildQuickGoalButton('30min', 30, controller),
+                          _buildQuickGoalButton('1h', 60, controller),
+                          _buildQuickGoalButton('2h', 120, controller),
+                          _buildQuickGoalButton('5h', 300, controller),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16.0),
+                      bottomRight: Radius.circular(16.0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Annuler'),
+                      ),
+                      const SizedBox(width: 12.0),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final minutes = int.tryParse(controller.text);
+                          if (minutes != null && minutes >= 0) {
+                            final matiereModifiee = Matiere(
+                              id: matiere.id,
+                              nom: matiere.nom,
+                              couleur: matiere.couleur,
+                              priorite: matiere.priorite,
+                              objectifHebdo: minutes,
+                            );
+                            
+                            try {
+                              await _dbHelper.updateMatiere(matiereModifiee);
+                              await _chargerMatieres();
+                              Navigator.pop(context);
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('✅ Objectif de $minutes min défini'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } catch (e) {
+                              print('❌ Erreur mise à jour objectif: $e');
+                            }
+                          }
+                        },
+                        child: const Text('Enregistrer'),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final minutes = int.tryParse(controller.text);
-              if (minutes != null && minutes >= 0) {
-                final matiereModifiee = Matiere(
-                  id: matiere.id,
-                  nom: matiere.nom,
-                  couleur: matiere.couleur,
-                  priorite: matiere.priorite,
-                  objectifHebdo: minutes,
-                );
-                
-                try {
-                  await _dbHelper.updateMatiere(matiereModifiee);
-                  await _chargerMatieres();
-                  Navigator.pop(context);
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('✅ Objectif de $minutes min défini'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  print('❌ Erreur mise à jour objectif: $e');
-                }
-              }
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
       ),
     );
   }
@@ -468,7 +518,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue.shade100,
         foregroundColor: Colors.blue,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       ),
       child: Text(label),
     );
@@ -481,7 +531,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
         title: const Text('📚 Mes Matières'),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -499,12 +549,12 @@ class _MatieresScreenState extends State<MatieresScreen> {
         key: _refreshIndicatorKey,
         onRefresh: _onRefresh,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator.adaptive())
             : SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final bool isDesktop = constraints.maxWidth > 600;
+                    final bool isDesktop = constraints.maxWidth > 600.0;
                     
                     return Padding(
                       padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
@@ -514,26 +564,26 @@ class _MatieresScreenState extends State<MatieresScreen> {
                           if (isDesktop) ...[
                             const Text(
                               'Gestion des Matières',
-                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 20.0),
                           ],
                           
                           // COMPTEUR DE MATIÈRES
                           Card(
-                            elevation: 2,
+                            elevation: 2.0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.0),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Row(
                                 children: [
                                   const Icon(Icons.library_books, color: Colors.blue),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 8.0),
                                   Text(
                                     '${_matieres.length} matière${_matieres.length > 1 ? 's' : ''}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
                                   ),
                                   const Spacer(),
                                   FutureBuilder<Map<int, int>>(
@@ -543,7 +593,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                                       return Text(
                                         '$totalSessions sessions',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 14.0,
                                           color: Colors.grey.shade600,
                                         ),
                                       );
@@ -554,7 +604,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                             ),
                           ),
                           
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 16.0),
                           
                           // LISTE/GRILLE DES MATIÈRES
                           _matieres.isEmpty
@@ -566,25 +616,25 @@ class _MatieresScreenState extends State<MatieresScreen> {
                                       children: [
                                         Icon(
                                           Icons.library_books,
-                                          size: 64,
+                                          size: 64.0,
                                           color: Colors.grey.shade400,
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 16.0),
                                         Text(
                                           'Aucune matière',
                                           style: TextStyle(
-                                            fontSize: 18,
+                                            fontSize: 18.0,
                                             color: Colors.grey.shade600,
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 8.0),
                                         Text(
                                           'Ajoutez votre première matière',
                                           style: TextStyle(
                                             color: Colors.grey.shade500,
                                           ),
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 16.0),
                                         ElevatedButton(
                                           onPressed: () => _showAddMatiereDialog(context),
                                           child: const Text('Ajouter une matière'),
@@ -613,7 +663,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
     return Column(
       children: _matieres.map((matiere) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 12.0),
           child: _buildMatiereCard(matiere, true),
         );
       }).toList(),
@@ -623,11 +673,11 @@ class _MatieresScreenState extends State<MatieresScreen> {
   // 🖥️ GRID 2 COLONNES POUR DESKTOP
   Widget _buildDesktopGrid() {
     return Wrap(
-      spacing: 16,
-      runSpacing: 16,
+      spacing: 16.0,
+      runSpacing: 16.0,
       children: _matieres.map((matiere) {
         return SizedBox(
-          width: (MediaQuery.of(context).size.width - 64) / 2,
+          width: (MediaQuery.of(context).size.width - 64.0) / 2.0,
           child: _buildMatiereCard(matiere, false),
         );
       }).toList(),
@@ -643,17 +693,17 @@ class _MatieresScreenState extends State<MatieresScreen> {
         final tempsMatiere = snapshot.data?['temps'] ?? 0;
         final sessionsCount = snapshot.data?['sessions'] ?? 0;
         final progression = matiere.objectifHebdo > 0 
-            ? (tempsMatiere / matiere.objectifHebdo).clamp(0, 1)
-            : 0;
+            ? (tempsMatiere / matiere.objectifHebdo).clamp(0, 1).toDouble()
+            : 0.0;
         
         return Container(
           constraints: BoxConstraints(
-            maxHeight: isMobile ? 280 : 260,
+            maxHeight: isMobile ? 280.0 : 260.0,
           ),
           child: Card(
-            elevation: 4,
+            elevation: 4.0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.0),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -664,14 +714,14 @@ class _MatieresScreenState extends State<MatieresScreen> {
                   Row(
                     children: [
                       Container(
-                        width: 12,
-                        height: 12,
+                        width: 12.0,
+                        height: 12.0,
                         decoration: BoxDecoration(
                           color: couleur,
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 8.0),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,7 +729,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                             Text(
                               matiere.nom,
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -689,14 +739,14 @@ class _MatieresScreenState extends State<MatieresScreen> {
                               children: [
                                 Icon(
                                   _getPriorityIcon(matiere.priorite),
-                                  size: 14,
+                                  size: 14.0,
                                   color: _getPriorityColor(matiere.priorite),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 4.0),
                                 Text(
                                   _getPriorityText(matiere.priorite),
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 12.0,
                                     color: Colors.grey.shade600,
                                   ),
                                 ),
@@ -706,40 +756,40 @@ class _MatieresScreenState extends State<MatieresScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.flag, size: 18),
+                        icon: const Icon(Icons.flag, size: 18.0),
                         onPressed: () => _showEditObjectifDialog(matiere),
                         tooltip: 'Définir objectif',
                         color: Colors.blue,
                       ),
                       if (isMobile)
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          icon: const Icon(Icons.delete, color: Colors.red, size: 20.0),
                           onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
                           tooltip: 'Supprimer',
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 12.0),
                   
                   // Objectif hebdomadaire
                   InkWell(
                     onTap: () => _showEditObjectifDialog(matiere),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.0),
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.flag, size: 16, color: Colors.blue),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.flag, size: 16.0, color: Colors.blue),
+                          const SizedBox(width: 8.0),
                           Expanded(
                             child: Text(
                               'Objectif: ${matiere.objectifHebdo} min/semaine',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 12.0,
                                 color: Colors.grey.shade700,
                                 fontWeight: matiere.objectifHebdo > 0 
                                     ? FontWeight.bold 
@@ -753,45 +803,45 @@ class _MatieresScreenState extends State<MatieresScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 12.0),
                   
                   // Statistiques
                   Row(
                     children: [
-                      const Icon(Icons.timer, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.timer, size: 14.0, color: Colors.grey),
+                      const SizedBox(width: 4.0),
                       Expanded(
                         child: Text(
                           '$tempsMatiere min étudiés',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                          style: TextStyle(fontSize: 11.0, color: Colors.grey.shade600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.list, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 12.0),
+                      const Icon(Icons.list, size: 14.0, color: Colors.grey),
+                      const SizedBox(width: 4.0),
                       Expanded(
                         child: Text(
                           '$sessionsCount sessions',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                          style: TextStyle(fontSize: 11.0, color: Colors.grey.shade600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                   
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 8.0),
                   
-                  // Progression
+                  // Progression - CORRIGÉ ICI
                   LinearProgressIndicator(
                     value: progression,
                     backgroundColor: Colors.grey.shade200,
                     valueColor: AlwaysStoppedAnimation<Color>(couleur),
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
+                    minHeight: 8.0,
+                    borderRadius: BorderRadius.circular(4.0),
                   ),
                   
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 4.0),
                   
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -799,7 +849,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                       Text(
                         '${(progression * 100).toInt()}% complété',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 11.0,
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.bold,
                         ),
@@ -807,7 +857,7 @@ class _MatieresScreenState extends State<MatieresScreen> {
                       Text(
                         '$tempsMatiere/${matiere.objectifHebdo} min',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 11.0,
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -815,11 +865,11 @@ class _MatieresScreenState extends State<MatieresScreen> {
                   ),
                   
                   if (!isMobile) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 8.0),
                     Align(
                       alignment: Alignment.centerRight,
                       child: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+                        icon: const Icon(Icons.delete, color: Colors.red, size: 18.0),
                         onPressed: () => _supprimerMatiere(matiere.id!, matiere.nom),
                         tooltip: 'Supprimer',
                       ),
